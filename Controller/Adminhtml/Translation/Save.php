@@ -32,21 +32,28 @@ class Save extends \Magento\Backend\App\Action
     protected $helper;
 
     /**
+     * @var \Magento\Backend\Model\Auth\Session
+     */
+    protected $authSession;
+
+    /**
      * Save constructor.
      * @param \Magento\Backend\App\Action\Context $context
      * @param \Magento\Framework\Registry $coreRegistry
      * @param \Magento\Framework\App\Request\DataPersistorInterface $dataPersistor
      * @param \Experius\MissingTranslations\Helper\Data $helper
+     * @param \Magento\Backend\Model\Auth\Session $authSession
      */
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
         \Magento\Framework\Registry $coreRegistry,
         \Magento\Framework\App\Request\DataPersistorInterface $dataPersistor,
-        \Experius\MissingTranslations\Helper\Data $helper
+        \Experius\MissingTranslations\Helper\Data $helper,
+        \Magento\Backend\Model\Auth\Session $authSession
     ) {
         $this->dataPersistor = $dataPersistor;
         $this->helper = $helper;
-
+        $this->authSession = $authSession;
 
         parent::__construct($context);
     }
@@ -58,6 +65,16 @@ class Save extends \Magento\Backend\App\Action
      */
     public function execute()
     {
+        /**
+         * Set session locale back to user interface locale to prevent interface language change after post
+         */
+        $userLocale = $this->authSession->getUser()->getInterfaceLocale();
+        $sessionLocale = $this->_getSession()->getData('session_locale');
+
+        if ($userLocale && $userLocale !== $sessionLocale) {
+            $this->_getSession()->setData('session_locale', $userLocale);
+        }
+
         /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
         $resultRedirect = $this->resultRedirectFactory->create();
         $data = $this->getRequest()->getPostValue();
